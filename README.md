@@ -3,7 +3,6 @@ OCA Python SDK
 
 Python SDK for OCA's "OCA Express Pak"
 
-
 Methods
 -------
 
@@ -55,6 +54,12 @@ shipping = {
 shipping_cost = oca.get_shipping_cost(**shipping)
 shipping_status = oca.get_shipping_status(TRACKING_NUMBER)
 ```
+
+Dependencies
+------------
+
+* [requests](http://github.com/kennethreitz/requests)
+* [lxml](http://github.com/lxml/lxml)
 
 Version
 -------
