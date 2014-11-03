@@ -35,7 +35,7 @@ class OCA(object):
         provinces = []
         for province in element.findall('.//Provincia'):
             data = {
-                'provinceID': self.get_text(province, 'IdProvincia'),
+                'province_id': self.get_text(province, 'IdProvincia'),
                 'description': self.get_text(province, 'Descripcion')
             }
             provinces.append(data)
@@ -57,13 +57,13 @@ class OCA(object):
         centers = []
         for center in element.findall('.//Table'):
             data = {
-                'centerID': self.get_text(center, 'idCentroImposicion'),
+                'center_id': self.get_text(center, 'idCentroImposicion'),
                 'code': self.get_text(center, 'Sigla'),
                 'street': self.get_text(center, 'Calle'),
                 'number': self.get_text(center, 'Numero'),
                 'floor': self.get_text(center, 'Piso'),
                 'district': self.get_text(center, 'Localidad'),
-                'postalCode': self.get_text(center, 'codigopostal'),
+                'postal_code': self.get_text(center, 'codigopostal'),
             }
             centers.append(data)
         return centers
@@ -75,8 +75,8 @@ class OCA(object):
         centers = []
         for center in element.findall('.//Table'):
             data = {
-                'centerID': self.get_text(center, 'idCentroImposicion'),
-                'branchID': self.get_text(center, 'IdSucursalOCA'),
+                'center_id': self.get_text(center, 'idCentroImposicion'),
+                'branch_id': self.get_text(center, 'IdSucursalOCA'),
                 'code': self.get_text(center, 'Sigla'),
                 'street': self.get_text(center, 'Calle'),
                 'number': self.get_text(center, 'Numero'),
@@ -85,9 +85,9 @@ class OCA(object):
                 'appartment': self.get_text(center, 'Depto'),
                 'phone': self.get_text(center, 'Telefono'),
                 'district': self.get_text(center, 'Localidad'),
-                'provinceID': self.get_text(center, 'IdProvincia'),
-                'postalCode': self.get_text(center, 'CodigoPostal'),
-                'postalCodeID': self.get_text(center, 'idCodigoPostal'),
+                'province_id': self.get_text(center, 'IdProvincia'),
+                'postal_code': self.get_text(center, 'CodigoPostal'),
+                'postal_code_id': self.get_text(center, 'idCodigoPostal'),
                 'description': self.get_text(center, 'Descripcion')
             }
             centers.append(data)
@@ -99,7 +99,7 @@ class OCA(object):
         centers = []
         for center in element.findall('.//Table'):
             data = {
-                'centerID': self.get_text(center, 'idCentroImposicion'),
+                'center_id': self.get_text(center, 'idCentroImposicion'),
                 'code': self.get_text(center, 'Sigla'),
                 'street': self.get_text(center, 'Calle'),
                 'number': self.get_text(center, 'Numero'),
@@ -107,7 +107,7 @@ class OCA(object):
                 'floor': self.get_text(center, 'Piso'),
                 'district': self.get_text(center, 'Localidad'),
                 'province': self.get_text(center, 'Provincia'),
-                'postalCode': self.get_text(center, 'codigopostal'),
+                'postal_code': self.get_text(center, 'codigopostal'),
                 'description': self.get_text(center, 'Descripcion'),
                 'comments': self.get_text(center, 'Observaciones')
             }
@@ -121,8 +121,8 @@ class OCA(object):
         centers = []
         for center in element.findall('.//Table'):
             data = {
-                'centerID': self.get_text(center, 'idCentroImposicion'),
-                'branchID': self.get_text(center, 'IdSucursalOCA'),
+                'center_id': self.get_text(center, 'idCentroImposicion'),
+                'branch_id': self.get_text(center, 'IdSucursalOCA'),
                 'code': self.get_text(center, 'Sigla'),
                 'street': self.get_text(center, 'Calle'),
                 'number': self.get_text(center, 'Numero'),
@@ -130,8 +130,8 @@ class OCA(object):
                 'floor': self.get_text(center, 'Piso'),
                 'tower': self.get_text(center, 'Torre'),
                 'district': self.get_text(center, 'Localidad'),
-                'postalCode': self.get_text(center, 'CodigoPostal'),
-                'postalCodeID': self.get_text(center, 'idCodigoPostal'),
+                'postal_code': self.get_text(center, 'CodigoPostal'),
+                'postal_code_id': self.get_text(center, 'idCodigoPostal'),
                 'description': self.get_text(center, 'Descripcion'),
                 'comments': self.get_text(center, 'Observaciones')
             }
@@ -153,7 +153,7 @@ class OCA(object):
         return {
             'calculator': self.get_text(element, 'Tarifador'),
             'price': self.get_text(element, 'Precio'),
-            'serviceID': self.get_text(element, 'idTiposervicio'),
+            'service_id': self.get_text(element, 'idTiposervicio'),
             'area': self.get_text(element, 'Ambito'),
             'eta': self.get_text(element, 'PlazoEntrega'),
             'aditional': self.get_text(element, 'Adicional'),
@@ -165,8 +165,8 @@ class OCA(object):
         element = self.__client.post('TrackingEnvio_EstadoActual', request)
 
         return {
-            'trackingNumber': self.get_text(element, 'NumeroEnvio'),
-            'clientDocument': self.get_text(element, 'DocumentoCliente'),
+            'tracking_number': self.get_text(element, 'NumeroEnvio'),
+            'client_document': self.get_text(element, 'DocumentoCliente'),
             'status': self.get_text(element, 'Estado'),
             'date': self.get_text(element, 'Fecha'),
             'motive': self.get_text(element, 'Motivo'),
