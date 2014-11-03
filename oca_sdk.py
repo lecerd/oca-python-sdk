@@ -3,6 +3,17 @@ from lxml import etree
 
 # --------------------------------------------------------------------------------------------------
 
+class OCAServerError(Exception):
+    pass
+
+class NoDataReturned(Exception):
+    pass
+
+class DataKeyNotFound(Exception):
+    pass
+
+# --------------------------------------------------------------------------------------------------
+
 class OCA(object):
     def __init__(self, cuit):
         self.version = "0.1.0"
@@ -11,9 +22,12 @@ class OCA(object):
 
     def get_text(self, context, tag):
         tag = context.find('.//' + tag)
-        if tag is not None and tag.text is not None:
-            return '%s' % (tag.text.strip())
-        return ''
+        if tag is not None:
+            if tag.text is not None:
+                return '%s' % (tag.text.strip())
+            return ''
+        else:
+            raise DataKeyNotFound()
 
     def get_province_list(self):
         element = self.__client.post('GetProvincias')
@@ -49,7 +63,7 @@ class OCA(object):
                 'number': self.get_text(center, 'Numero'),
                 'floor': self.get_text(center, 'Piso'),
                 'district': self.get_text(center, 'Localidad'),
-                'postalCode': self.get_text(center, 'codigoPostal'),
+                'postalCode': self.get_text(center, 'codigopostal'),
             }
             centers.append(data)
         return centers
@@ -181,7 +195,10 @@ class OCA(object):
                 recover=True,
                 encoding='utf-8'
             )
-            return etree.fromstring(xml, parser=parser)
+            xml_etree = etree.fromstring(xml, parser=parser)
+            if xml_etree is None:
+                raise NoDataReturned()
+            return xml_etree
 
         def post(self, uri, data=None):
             result = requests.post(
@@ -189,4 +206,7 @@ class OCA(object):
                 data=data,
                 headers={'User-Agent':self.USER_AGENT}
             )
+
+            if result.status_code != 200:
+                raise OCAServerError()
             return self.parse_xml(result.text)
