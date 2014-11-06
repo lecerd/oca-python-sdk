@@ -1,4 +1,5 @@
 import requests
+import json
 from lxml import etree
 
 # --------------------------------------------------------------------------------------------------
@@ -9,7 +10,7 @@ class OCAServerError(Exception):
 class NoDataReturned(Exception):
     pass
 
-class DataKeyNotFound(Exception):
+class DataTagNotFound(Exception):
     pass
 
 # --------------------------------------------------------------------------------------------------
@@ -21,19 +22,31 @@ class OCA(object):
         self.__cuit = cuit
 
     def get_text(self, context, tag):
-        tag = context.find('.//' + tag)
-        if tag is not None:
-            if tag.text is not None:
-                return '%s' % (tag.text.strip())
+        xml_tag = context.find('.//' + tag)
+
+        if xml_tag is not None:
+            if xml_tag.text is not None:
+                return '%s' % (xml_tag.text.strip())
             return ''
         else:
-            raise DataKeyNotFound()
+            raise DataTagNotFound(tag)
+
+    def get_error_msg(self, **kwargs):
+        return ''.join('\n\n %s: \n %s' % (k.upper(), v) for k, v in kwargs.iteritems())
+
+    def findall(self, element, tag, request={}, uri=''):
+        nodes = element.findall('.//%s' % tag)
+        if not len(nodes):
+            msg = self.get_error_msg(uri=uri, request=request, tag=tag)
+            raise NoDataReturned(msg)
+        return nodes
 
     def get_province_list(self):
-        element = self.__client.post('GetProvincias')
+        uri = 'GetProvincias'
+        element = self.__client.post(uri)
 
         provinces = []
-        for province in element.findall('.//Provincia'):
+        for province in self.findall(element, 'Provincia', {}, uri):
             data = {
                 'province_id': self.get_text(province, 'IdProvincia'),
                 'description': self.get_text(province, 'Descripcion')
@@ -43,19 +56,21 @@ class OCA(object):
 
     def get_district_list_by_province(self, province_id):
         request = {'idProvincia': province_id}
-        element = self.__client.post('GetLocalidadesByProvincia', request)
+        uri = 'GetLocalidadesByProvincia'
+        element = self.__client.post(uri, request)
 
         districts = []
-        for district in element.findall('.//Provincia'):
+        for district in self.findall(element, 'Provincia', request, uri):
             data = {'name': self.get_text(district, 'Nombre')}
             districts.append(data)
         return districts
 
     def get_imposition_center_list(self):
-        element = self.__client.post('GetCentrosImposicion')
+        uri = 'GetCentrosImposicion'
+        element = self.__client.post(uri)
 
         centers = []
-        for center in element.findall('.//Table'):
+        for center in self.findall(element, 'Table', {}, uri):
             data = {
                 'center_id': self.get_text(center, 'idCentroImposicion'),
                 'code': self.get_text(center, 'Sigla'),
@@ -70,10 +85,11 @@ class OCA(object):
 
     def get_imposition_center_list_by_postal_code(self, postal_code):
         request = {'CodigoPostal': postal_code}
-        element = self.__client.post('GetCentrosImposicionPorCP', request)
+        uri = 'GetCentrosImposicionPorCP'
+        element = self.__client.post(uri, request)
 
         centers = []
-        for center in element.findall('.//Table'):
+        for center in self.findall(element, 'Table', request, uri):
             data = {
                 'center_id': self.get_text(center, 'idCentroImposicion'),
                 'branch_id': self.get_text(center, 'IdSucursalOCA'),
@@ -94,10 +110,11 @@ class OCA(object):
         return centers
 
     def get_admission_center_list(self):
-        element = self.__client.post('GetCentrosImposicionAdmision')
+        uri = 'GetCentrosImposicionAdmision'
+        element = self.__client.post(uri)
 
         centers = []
-        for center in element.findall('.//Table'):
+        for center in self.findall(element, 'Table', {}, uri):
             data = {
                 'center_id': self.get_text(center, 'idCentroImposicion'),
                 'code': self.get_text(center, 'Sigla'),
@@ -116,10 +133,11 @@ class OCA(object):
 
     def get_admission_center_list_by_postal_code(self, postal_code):
         request = {'CodigoPostal': postal_code}
-        element = self.__client.post('GetCentrosImposicionAdmisionPorCP', request)
+        uri = 'GetCentrosImposicionAdmisionPorCP'
+        element = self.__client.post(uri, request)
 
         centers = []
-        for center in element.findall('.//Table'):
+        for center in self.findall(element, 'Table', request, uri):
             data = {
                 'center_id': self.get_text(center, 'idCentroImposicion'),
                 'branch_id': self.get_text(center, 'IdSucursalOCA'),
@@ -148,21 +166,34 @@ class OCA(object):
             'CantidadPaquetes': kwargs['package_count'],
             'Cuit': self.__cuit,
         }
-        element = self.__client.post('Tarifar_Envio_Corporativo', request)
+        uri = 'Tarifar_Envio_Corporativo'
+        element = self.__client.post(uri, request)
+
+        node = element.find('.//Table')
+        if node is None:
+            msg = self.get_error_msg(uri=uri, request=json.dumps(request))
+            raise NoDataReturned(msg)
 
         return {
-            'calculator': self.get_text(element, 'Tarifador'),
-            'price': self.get_text(element, 'Precio'),
-            'service_id': self.get_text(element, 'idTiposervicio'),
-            'area': self.get_text(element, 'Ambito'),
-            'eta': self.get_text(element, 'PlazoEntrega'),
-            'aditional': self.get_text(element, 'Adicional'),
-            'total': self.get_text(element, 'Total')
+            'calculator': self.get_text(node, 'Tarifador'),
+            'price': self.get_text(node, 'Precio'),
+            'service_id': self.get_text(node, 'idTiposervicio'),
+            'area': self.get_text(node, 'Ambito'),
+            'eta': self.get_text(node, 'PlazoEntrega'),
+            'aditional': self.get_text(node, 'Adicional'),
+            'total': self.get_text(node, 'Total')
         }
+
+
 
     def get_shipping_status(self, tracking_number):
         request = {'numeroEnvio': tracking_number}
-        element = self.__client.post('TrackingEnvio_EstadoActual', request)
+        uri = 'TrackingEnvio_EstadoActual'
+        element = self.__client.post(uri, request)
+
+        if element is None:
+            msg = self.get_error_msg(uri=uri, request=request)
+            raise NoDataReturned(msg)
 
         return {
             'tracking_number': self.get_text(element, 'NumeroEnvio'),
@@ -171,7 +202,7 @@ class OCA(object):
             'date': self.get_text(element, 'Fecha'),
             'motive': self.get_text(element, 'Motivo'),
             'branch': self.get_text(element, 'Sucursal'),
-            'lat': self.get_text(element, 'Latitug'),
+            'lat': self.get_text(element, 'Latitud'),
             'lng': self.get_text(element, 'Longitud')
         }
 
@@ -195,12 +226,12 @@ class OCA(object):
                 recover=True,
                 encoding='utf-8'
             )
-            xml_etree = etree.fromstring(xml, parser=parser)
-            if xml_etree is None:
-                raise NoDataReturned()
-            return xml_etree
+            root = etree.fromstring(xml, parser=parser)
+            if not len(root):
+                raise NoDataReturned('Returned XML has no children.')
+            return root
 
-        def post(self, uri, data=None):
+        def post(self, uri, data={}):
             result = requests.post(
                 self.get_url(uri),
                 data=data,
@@ -208,5 +239,8 @@ class OCA(object):
             )
 
             if result.status_code != 200:
-                raise OCAServerError()
+                msg = self.oca.get_error_msg(
+                    http_status=result.status_code, request=json.dumps(data), oca_error=result.text)
+                raise OCAServerError(msg)
+
             return self.parse_xml(result.text)
