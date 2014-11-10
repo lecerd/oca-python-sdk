@@ -4,6 +4,15 @@ from lxml import etree
 
 # --------------------------------------------------------------------------------------------------
 
+from decimal import Decimal
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return str(o)
+        return super(DecimalEncoder, self).default(o)
+
+# --------------------------------------------------------------------------------------------------
+
 class OCAServerError(Exception):
     pass
 
@@ -171,7 +180,7 @@ class OCA(object):
 
         node = element.find('.//Table')
         if node is None:
-            msg = self.get_error_msg(uri=uri, request=json.dumps(request))
+            msg = self.get_error_msg(uri=uri, request=json.dumps(request, cls=DecimalEncoder))
             raise NoDataReturned(msg)
 
         return {
@@ -239,8 +248,9 @@ class OCA(object):
             )
 
             if result.status_code != 200:
+                request = json.dumps(data, cls=DecimalEncoder)
                 msg = self.oca.get_error_msg(
-                    http_status=result.status_code, request=json.dumps(data), oca_error=result.text)
+                    http_status=result.status_code, request=request, oca_error=result.text)
                 raise OCAServerError(msg)
 
             return self.parse_xml(result.text)
